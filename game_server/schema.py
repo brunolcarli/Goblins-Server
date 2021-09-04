@@ -1,10 +1,29 @@
 import graphene
+import graphql_jwt
 
-import goblins.schema
+# import chatbot.schema as chatbot
+import users.schema as users
+import goblins.schema as goblins
 
+queries = (
+    graphene.ObjectType,
+    users.Query,
+    goblins.Query,
+)
 
-class Query(goblins.schema.Query, graphene.ObjectType):
+mutations = (
+    graphene.ObjectType,
+    users.Mutation,
+    goblins.Mutation,
+)
+
+class Query(*queries):
     pass
 
 
-schema = graphene.Schema(query=Query)
+class Mutation(*mutations):
+    log_in = graphql_jwt.ObtainJSONWebToken.Field()
+    validate_user_token = graphql_jwt.Verify.Field()
+    refresh_user_token = graphql_jwt.Refresh.Field()
+
+schema = graphene.Schema(query=Query, mutation=Mutation)
