@@ -10,4 +10,4 @@ class Entity(models.Model):
     reference = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=50)
     location = models.BinaryField()
-    logged = models.BooleanField()
+    logged = models.BooleanField(null=True)

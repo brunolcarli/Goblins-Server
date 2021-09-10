@@ -4,6 +4,7 @@ import graphene
 from goblins.models import Entity
 from django.conf import settings
 from goblins.util import publish
+from users.utils import access_required
 
 
 class PositionType(graphene.ObjectType):
@@ -17,9 +18,23 @@ class PositionType(graphene.ObjectType):
 class EntityType(graphene.ObjectType):
     name = graphene.String()
     location = graphene.Field(PositionType)
+    logged = graphene.Boolean()
+
+    def resolve_name(self, info, **kwargs):
+        if not self.name:
+            return self.reference
+        return self.name
+
+
+    def resolve_logged(self, info, **kwargs):
+        if self.logged:
+            return True
+        return False
 
     def resolve_location(self, info, **kwargs):
-        return literal_eval(self.location.decode('utf-8'))
+        if self.location:
+            return literal_eval(self.location.decode('utf-8'))
+        return {'x': 0, 'y': 0}
 
 
 class Query:
@@ -28,15 +43,16 @@ class Query:
         description='Returns service version'
     )
 
+    @access_required
     def resolve_version(self, info, **kwargs):
         return settings.VERSION
-
 
     entities = graphene.List(
         EntityType,
         logged=graphene.Boolean()
     )
 
+    @access_required
     def resolve_entities(self, info, **kwargs):
         return Entity.objects.filter(**kwargs)
 
@@ -46,6 +62,7 @@ class Query:
         description='Get position from a filtered entity'
     )
 
+    @access_required
     def resolve_position(self, info, **kwargs):
         return Entity.objects.get(reference=kwargs['reference'])
 
@@ -63,6 +80,7 @@ class CreateEntity(graphene.relay.ClientIDMutation):
         reference = graphene.String(required=True)
         location = graphene.Argument(LocationInput)
 
+    @access_required
     def mutate_and_get_payload(self, info, **kwargs):
         location = kwargs.get('location', {'x': 0, 'y': 0})
         location = str(location).encode('utf-8')
@@ -85,6 +103,7 @@ class UpdatePosition(graphene.relay.ClientIDMutation):
         reference = graphene.String(required=True)
         location = graphene.Argument(LocationInput, required=True)
 
+    @access_required
     def mutate_and_get_payload(self, info, **kwargs):
         location = kwargs.get('location')
         x = location.get('x', 0)
