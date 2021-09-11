@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+
+  game_server_db:
+    image: mariadb:10.3
+    env_file: game_server/environment/server_env
+
+  game_server:
+    build: .    
+    image: game_server:devel
+    restart: on-failure
+    container_name: game_server_container
+    command: gunicorn -w 3 game_server.wsgi:application -b :11000
+    env_file: game_server/environment/server_env
+    volumes:
+      - .:/app
+      - static_data:/app/static
+    ports:
+      - "11000:11000"
+    depends_on:
+      - game_server_db
+
+volumes:
+  static_data:
