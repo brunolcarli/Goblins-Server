@@ -7,7 +7,7 @@ q = Queue('action_commands', exchange=ex, routing_key='action_command')
 
 def publish(data):
     with Connection(
-        hostname='192.168.25.3',
+        hostname='104.237.1.145/',
         userid='bruno',
         password='bruno',
         virtual_host='beelze') as con:
