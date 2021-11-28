@@ -6,3 +6,5 @@ kombu==5.1.0
 django-graphql-jwt==0.2.1
 PyJWT==1.7.0
 msgpack==1.0.2
+paho-mqtt
+django-cors-headers==3.0.2
