@@ -141,3 +141,8 @@ STATIC_URL = '/static/'
 GRAPHENE = {
     'SCHEMA': 'game_server.schema.schema',
 }
+
+REDIS = {
+    'host': os.environ.get('REDIS_HOST', 'localhost'),
+    'port': os.environ.get('REDIS_PORT', 6379)
+}
