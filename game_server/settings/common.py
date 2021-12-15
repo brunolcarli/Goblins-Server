@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'graphene_django',
     'goblins',
-    'users'
+    'users',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
@@ -53,6 +54,18 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.BrokenLinkEmailsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+]
+
+CORS_ORIGIN_ALLOW_ALL = True
+
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:3000',
+    'http://localhost:8000',
+    'http://localhost:8080',
+    'http://localhost:11000',
 ]
 
 ROOT_URLCONF = 'game_server.urls'
@@ -127,4 +140,15 @@ STATIC_URL = '/static/'
 
 GRAPHENE = {
     'SCHEMA': 'game_server.schema.schema',
+}
+
+REDIS = {
+    'host': os.environ.get('REDIS_HOST', 'localhost'),
+    'port': os.environ.get('REDIS_PORT', 6379)
+}
+
+MQTT = {
+    'host': os.environ.get('MQTT_HOST', 'localhost'),
+    'port': os.environ.get('MQTT_PORT', 1888),
+    'user': os.environ.get('MQTT_USER', 'guest')
 }

@@ -2,10 +2,16 @@ version: '3'
 
 services:
 
+  # Databases
   game_server_db:
     image: mariadb:10.3
     env_file: game_server/environment/server_env
 
+  redis:
+    image: redis:alpine
+    container_name: redis
+
+  # Service
   game_server:
     build: .    
     image: game_server:devel
@@ -20,6 +26,7 @@ services:
       - "11000:11000"
     depends_on:
       - game_server_db
+      - redis
 
 volumes:
   static_data:
