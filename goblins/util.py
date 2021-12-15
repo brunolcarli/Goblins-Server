@@ -1,34 +1,15 @@
-from kombu import Connection, Exchange, Queue
-import paho.mqtt.client as mqtt #import the client1
-import msgpack
 import json
+import paho.mqtt.client as mqtt
+from django.conf import settings
 
-ex = Exchange('goblins', 'topic')
-q = Queue('action_commands', exchange=ex, routing_key='action_command')
+def publish(data, topic):
+    """
+    Publish data to a MQTT topic.
+    """
+    broker_address = settings.MQTT['host']
+    client = mqtt.Client(settings.MQTT['user'])
+    client.connect(broker_address, port=settings.MQTT['port'])
+    client.loop_start()
 
-
-# def publish(data):
-#     with Connection(
-#         hostname='104.237.1.145/',
-#         userid='bruno',
-#         password='bruno',
-#         virtual_host='beelze') as con:
-#                 producer = con.Producer(serializer='msgpack')
-#                 producer.publish(
-#                     data,
-#                     exchange=ex,
-#                     routing_key='action_command', queue=[q]
-#                 )
-
-def publish(data):
-    broker_address="104.237.1.145"
-    client = mqtt.Client("Server") #create new instancek
-    print("connecting to broker")
-    client.connect(broker_address, port=18883) #connect to broker
-    client.loop_start() #start the loop
-    # client.subscribe("house/bulbs/bulb1")
-    # print("Publishing message to topic","house/bulbs/bulb1")
-    # data = msgpack.packb(data)
-    print(data)
-    client.publish("foo/baz", json.dumps(data))
-    client.loop_stop() #stop the loop
+    client.publish(topic, json.dumps(data))
+    client.loop_stop()
