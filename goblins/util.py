@@ -8,7 +8,7 @@ def publish(data, topic):
     """
     broker_address = settings.MQTT['host']
     client = mqtt.Client(settings.MQTT['user'])
-    client.connect(broker_address, port=settings.MQTT['port'])
+    client.connect(broker_address, port=int(settings.MQTT['port']))
     client.loop_start()
 
     client.publish(topic, json.dumps(data))
