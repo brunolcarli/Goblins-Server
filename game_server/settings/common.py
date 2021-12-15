@@ -146,3 +146,9 @@ REDIS = {
     'host': os.environ.get('REDIS_HOST', 'localhost'),
     'port': os.environ.get('REDIS_PORT', 6379)
 }
+
+MQTT = {
+    'host': os.environ.get('MQTT_HOST', 'localhost'),
+    'port': os.environ.get('MQTT_PORT', 1888),
+    'user': os.environ.get('MQTT_USER', 'guest')
+}
