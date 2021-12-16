@@ -14,6 +14,8 @@ from graphene_django import DjangoObjectType
 from django.contrib.auth import get_user_model
 from users.utils import access_required
 from users.models import TokenBlackList
+from goblins.models import Entity
+import graphql_jwt
 
 
 class UserType(DjangoObjectType):
@@ -87,17 +89,47 @@ class LogOut(graphene.relay.ClientIDMutation):
     """
     response = graphene.String()
 
+    class Input:
+        username = graphene.String(required=True)
+
     @access_required
     def mutate_and_get_payload(self, info, **_input):
+        username = _input['username']
         meta_info = info.context.META
         user_token = meta_info.get('HTTP_AUTHORIZATION')
 
+        ents = Entity.objects.filter(reference=username)
+        for ent in ents:
+            ent.logged = False
+            ent.save()
         revoke = TokenBlackList.objects.create(token=user_token)
         revoke.save()
 
         return LogOut("Bye Bye")
 
 
+class LogIn(graphene.relay.ClientIDMutation):
+    token = graphene.String()
+
+    class Input:
+        username = graphene.String(required=True)
+        password = graphene.String(required=True)
+
+    def mutate_and_get_payload(self, info, **kwargs):
+        session = graphql_jwt.ObtainJSONWebToken.mutate(
+            self,
+            info,
+            username=kwargs['username'],
+            password=kwargs['password']
+        )
+        token = session.token
+        entity = Entity.objects.get(reference=kwargs['username'])
+        entity.logged = True
+        entity.save()
+
+        return LogIn(token)
+
 class Mutation(object):
     sign_up = CreateUser.Field()
     log_out = LogOut.Field()
+    log_in = LogIn.Field()
