@@ -1,19 +1,15 @@
-from kombu import Connection, Exchange, Queue
+import json
+import paho.mqtt.client as mqtt
+from django.conf import settings
 
+def publish(data, topic):
+    """
+    Publish data to a MQTT topic.
+    """
+    broker_address = settings.MQTT['host']
+    client = mqtt.Client(settings.MQTT['user'])
+    client.connect(broker_address, port=int(settings.MQTT['port']))
+    client.loop_start()
 
-ex = Exchange('goblins', 'topic')
-q = Queue('action_commands', exchange=ex, routing_key='action_command')
-
-
-def publish(data):
-    with Connection(
-        hostname='104.237.1.145',
-        userid='bruno',
-        password='bruno',
-        virtual_host='beelze') as con:
-                producer = con.Producer(serializer='msgpack')
-                producer.publish(
-                    data,
-                    exchange=ex,
-                    routing_key='action_command', queue=[q]
-                )
+    client.publish(topic, json.dumps(data))
+    client.loop_stop()
