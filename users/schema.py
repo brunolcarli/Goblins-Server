@@ -96,14 +96,17 @@ class LogOut(graphene.relay.ClientIDMutation):
     def mutate_and_get_payload(self, info, **_input):
         username = _input['username']
         meta_info = info.context.META
-        user_token = meta_info.get('HTTP_AUTHORIZATION')
+        user_token = meta_info.get('HTTP_AUTHORIZATION').split(' ')[1]
+        token_metadata = graphql_jwt.utils.jwt_decode(user_token)
+
+
+        if username != token_metadata['username']:
+            raise Exception('Invalid credentials')
 
         ents = Entity.objects.filter(reference=username)
         for ent in ents:
             ent.logged = False
             ent.save()
-        revoke = TokenBlackList.objects.create(token=user_token)
-        revoke.save()
 
         return LogOut("Bye Bye")
 

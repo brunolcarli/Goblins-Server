@@ -21,7 +21,6 @@ class Query(*queries):
 
 
 class Mutation(*mutations):
-    # log_in = graphql_jwt.ObtainJSONWebToken.Field()
     validate_user_token = graphql_jwt.Verify.Field()
     refresh_user_token = graphql_jwt.Refresh.Field()
 

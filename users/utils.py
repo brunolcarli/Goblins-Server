@@ -19,7 +19,7 @@ def access_required(function):
     @wraps(function)
     def decorated(*args, **kwargs):
         user_token = args[1].context.META.get('HTTP_AUTHORIZATION')
-        
+
         try:
             kind, token = user_token.split()
         except:
