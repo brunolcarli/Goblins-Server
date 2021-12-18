@@ -1,7 +1,6 @@
 import graphene
 import graphql_jwt
 
-# import chatbot.schema as chatbot
 import users.schema as users
 import goblins.schema as goblins
 
@@ -22,7 +21,6 @@ class Query(*queries):
 
 
 class Mutation(*mutations):
-    log_in = graphql_jwt.ObtainJSONWebToken.Field()
     validate_user_token = graphql_jwt.Verify.Field()
     refresh_user_token = graphql_jwt.Refresh.Field()
 
