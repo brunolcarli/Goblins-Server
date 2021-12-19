@@ -110,15 +110,18 @@ class LogOut(graphene.relay.ClientIDMutation):
             ent.logged = False
             ent.save()
 
-        # Publish logged players to the interfaces
-        data = {}
+        # Publish logged playerd to the interfaces
+        data = {'data': {'entities': []}}
         for entity in Entity.objects.filter(logged=True):
+            user_data = {}
             try:
                 location = literal_eval(entity.location.decode('utf-8'))
             except:
                 continue
-
-            data[entity.reference] = location
+            
+            user_data['name'] = entity.reference
+            user_data['location'] = location
+            data['data']['entities'].append(user_data)
         publish(data, 'system/logged_players')
 
         return LogOut("Bye Bye")
@@ -126,7 +129,6 @@ class LogOut(graphene.relay.ClientIDMutation):
 
 class LogIn(graphene.relay.ClientIDMutation):
     token = graphene.String()
-    # entities = graphene.List(Entity)
 
     class Input:
         username = graphene.String(required=True)
@@ -145,14 +147,17 @@ class LogIn(graphene.relay.ClientIDMutation):
         entity.save()
 
         # Publish logged playerd to the interfaces
-        data = {}
+        data = {'data': {'entities': []}}
         for entity in Entity.objects.filter(logged=True):
+            user_data = {}
             try:
                 location = literal_eval(entity.location.decode('utf-8'))
             except:
                 continue
-
-            data[entity.reference] = location
+            
+            user_data['name'] = entity.reference
+            user_data['location'] = location
+            data['data']['entities'].append(user_data)
         publish(data, 'system/logged_players')
 
         return LogIn(token)
