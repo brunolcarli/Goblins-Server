@@ -109,7 +109,10 @@ class LogOut(graphene.relay.ClientIDMutation):
             ent.logged = False
             ent.save()
 
-        # Publish logged playerd to the interfaces
+        # publish logged out player
+        publish({'username': username}, 'system/logout')
+
+        # Publish logged playerd\s to the interfaces
         data = {'data': {'entities': []}}
         for entity in Entity.objects.filter(logged=True):
             user_data = {}
