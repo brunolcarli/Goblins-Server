@@ -101,7 +101,6 @@ class LogOut(graphene.relay.ClientIDMutation):
         user_token = meta_info.get('HTTP_AUTHORIZATION').split(' ')[1]
         token_metadata = graphql_jwt.utils.jwt_decode(user_token)
 
-
         if username != token_metadata['username']:
             raise Exception('Invalid credentials')
 
@@ -127,39 +126,6 @@ class LogOut(graphene.relay.ClientIDMutation):
 
         return LogOut("Bye Bye")
 
-        revoke = TokenBlackList.objects.create(token=user_token)
-        revoke.save()
-
-        return LogOut("Bye Bye")
-
-    def mutate_and_get_payload(self, info, **kwargs):
-        session = graphql_jwt.ObtainJSONWebToken.mutate(
-            self,
-            info,
-            username=kwargs['username'],
-            password=kwargs['password']
-        )
-        token = session.token
-        entity = Entity.objects.get(reference=kwargs['username'])
-        entity.logged = True
-        entity.save()
-
-        # Publish logged playerd to the interfaces
-        data = {'data': {'entities': []}}
-        for entity in Entity.objects.filter(logged=True):
-            user_data = {}
-            try:
-                location = literal_eval(entity.location.decode('utf-8'))
-            except:
-                continue
-            
-            user_data['name'] = entity.reference
-            user_data['location'] = location
-            user_data['logged'] = entity.logged
-            data['data']['entities'].append(user_data)
-        publish(data, 'system/logged_players')
-
-        return LogIn(token)
 
 class LogIn(graphene.relay.ClientIDMutation):
     token = graphene.String()
