@@ -191,6 +191,7 @@ class LogIn(graphene.relay.ClientIDMutation):
             
             user_data['name'] = entity.reference
             user_data['location'] = location
+            user_data['logged'] = entity.logged
             data['data']['entities'].append(user_data)
         publish(data, 'system/logged_players')
 
