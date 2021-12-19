@@ -9,9 +9,11 @@ Neste módulo ficarão:
 
 By Beelzebruno <brunolcarli@gmail.com>
 """
+from ast import literal_eval
 import graphene
 from graphene_django import DjangoObjectType
 from django.contrib.auth import get_user_model
+from goblins.util import publish
 from users.utils import access_required
 from users.models import TokenBlackList
 from goblins.models import Entity
@@ -108,11 +110,23 @@ class LogOut(graphene.relay.ClientIDMutation):
             ent.logged = False
             ent.save()
 
+        # Publish logged players to the interfaces
+        data = {}
+        for entity in Entity.objects.filter(logged=True):
+            try:
+                location = literal_eval(entity.location.decode('utf-8'))
+            except:
+                continue
+
+            data[entity.reference] = location
+        publish(data, 'system/logged_players')
+
         return LogOut("Bye Bye")
 
 
 class LogIn(graphene.relay.ClientIDMutation):
     token = graphene.String()
+    # entities = graphene.List(Entity)
 
     class Input:
         username = graphene.String(required=True)
@@ -129,6 +143,17 @@ class LogIn(graphene.relay.ClientIDMutation):
         entity = Entity.objects.get(reference=kwargs['username'])
         entity.logged = True
         entity.save()
+
+        # Publish logged playerd to the interfaces
+        data = {}
+        for entity in Entity.objects.filter(logged=True):
+            try:
+                location = literal_eval(entity.location.decode('utf-8'))
+            except:
+                continue
+
+            data[entity.reference] = location
+        publish(data, 'system/logged_players')
 
         return LogIn(token)
 
