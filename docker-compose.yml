@@ -23,10 +23,25 @@ services:
       - .:/app
       - static_data:/app/static
     ports:
-      - "11000:11000"
+      - "11000"
     depends_on:
       - game_server_db
       - redis
+
+  # nginx
+  nginx:
+    build: ./nginx/
+    container_name: game_server_nginx
+    ports:
+      - "11000:11000"
+      - "443:443"
+    restart: on-failure
+    volumes:
+      - static_data:/app/static
+      - ./nginx/certs:/etc/nginx/certs
+    depends_on:
+      - game_server
+
 
 volumes:
   static_data:
