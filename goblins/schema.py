@@ -57,7 +57,6 @@ class Query:
         description='Returns service version'
     )
 
-    @access_required
     def resolve_version(self, info, **kwargs):
         return settings.VERSION
 
