@@ -12,6 +12,7 @@ RUN apk add --no-cache \
             linux-headers \
             gcc
 
+ENV ENV_REF=production
 
 COPY game_server/requirements/common.txt .
 COPY game_server/requirements/production.txt .
