@@ -1,11 +1,11 @@
 
 run:
-	python manage.py runserver 0.0.0.0:11000 --settings=game_server.settings.common
+	python manage.py runserver 0.0.0.0:11000 --settings=game_server.settings.${ENV_REF}
 
 
 migrate:
-	python manage.py makemigrations --settings=game_server.settings.common
-	python manage.py migrate --settings=game_server.settings.common
+	python manage.py makemigrations --settings=game_server.settings.${ENV_REF}
+	python manage.py migrate --settings=game_server.settings.${ENV_REF}
 
 
 install:
