@@ -18,4 +18,4 @@ shell:
 run_docker:
 	docker-compose build
 	docker-compose up -d
-	docker exec game_server_container make migrate
+	docker exec game_server_container ./manage.py migrate
