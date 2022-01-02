@@ -11,7 +11,7 @@
 
 <div align="center">
 
-> ![Version badge](https://img.shields.io/badge/version-0.0.1-silver.svg)
+> ![Version badge](https://img.shields.io/badge/version-0.0.2-silver.svg)
 
 >![GraphQl Badge](https://badgen.net/badge/icon/graphql/pink?icon=graphql&label)
 [![Docs Link](https://badgen.net/badge/docs/github_wiki?icon=github)](https://github.com/brunolcarli/Goblins-Server/wiki)
@@ -188,7 +188,7 @@ You may test the API response by requesting the simple version query:
 >>> url = 'http://localhost:11000/graphql/'
 >>> response = requests.post(url, json={'query': '{version}'})
 >>> response.json()
-{'data': {'version': '0.0.1'}}
+{'data': {'version': '0.0.2'}}
 >>>
 ```
 
@@ -196,7 +196,7 @@ You may test the API response by requesting the simple version query:
 
 ```
 $ curl -X POST -H "Content-Type: application/json" --data '{ "query": "{version}" }' http://localhost:11000/graphql/
-{"data":{"version":"0.0.1"}}
+{"data":{"version":"0.0.2"}}
 ```
 
 # More information
