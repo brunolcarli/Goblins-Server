@@ -17,9 +17,7 @@ services:
     image: game_server:devel
     restart: on-failure
     container_name: game_server_container
-    command: >
-      sh -c "make migrate &&
-             gunicorn -w 3 game_server.wsgi:application -b :11000"
+    command: gunicorn -w 3 game_server.wsgi:application -b :11000
     env_file: game_server/environment/server_env
     volumes:
       - .:/app

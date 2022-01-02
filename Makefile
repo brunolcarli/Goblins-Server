@@ -14,3 +14,8 @@ install:
 
 shell:
 	python manage.py shell --settings=game_server.settings.${ENV_REF}
+
+run_docker:
+	docker-compose build
+	docker-compose up -d
+	docker exec game_server_container make migrate

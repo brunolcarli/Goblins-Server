@@ -169,8 +169,9 @@ Also, when running with Docker, the `DJANGO_SETTINGS_MODULE` **must always be** 
 On the project root, build the service container and run it with:
 
 ```
-$ docker-compose build && docker-compose up
+$ make run_docker
 ```
+
 
 The API should be available at `http://localhost:11000/graphql/`
 
