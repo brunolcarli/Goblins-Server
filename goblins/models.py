@@ -38,6 +38,9 @@ class Character(models.Model):
     skills = models.ManyToManyField('goblins.Skill')
     goblin_class = models.CharField(max_length=25, null=True)
 
+    class Meta:
+        unique_together = ('name', 'user')
+
 
 class Skill(models.Model):
     """
