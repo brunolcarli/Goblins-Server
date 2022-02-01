@@ -66,7 +66,6 @@ class CreateUser(graphene.relay.ClientIDMutation):
         email = graphene.String(required=True)
 
     def mutate_and_get_payload(self, info, **_input):
-
         username = _input.get('username')
         password = _input.get('password')
         email = _input.get('email')
@@ -112,7 +111,7 @@ class LogOut(graphene.relay.ClientIDMutation):
         # publish logged out player
         publish({'username': username}, 'system/logout')
 
-        # Publish logged playerd\s to the interfaces
+        # Publish logged players to the interfaces
         data = {'data': {'entities': []}}
         for entity in Entity.objects.filter(logged=True):
             user_data = {}
@@ -145,24 +144,24 @@ class LogIn(graphene.relay.ClientIDMutation):
             password=kwargs['password']
         )
         token = session.token
-        entity = Entity.objects.get(reference=kwargs['username'])
-        entity.logged = True
-        entity.save()
+        # entity = Entity.objects.get(reference=kwargs['username'])
+        # entity.logged = True
+        # entity.save()
 
-        # Publish logged playerd to the interfaces
-        data = {'data': {'entities': []}}
-        for entity in Entity.objects.filter(logged=True):
-            user_data = {}
-            try:
-                location = literal_eval(entity.location.decode('utf-8'))
-            except:
-                continue
+        # # Publish logged players to the interfaces
+        # data = {'data': {'entities': []}}
+        # for entity in Entity.objects.filter(logged=True):
+        #     user_data = {}
+        #     try:
+        #         location = literal_eval(entity.location.decode('utf-8'))
+        #     except:
+        #         continue
             
-            user_data['name'] = entity.reference
-            user_data['location'] = location
-            user_data['logged'] = entity.logged
-            data['data']['entities'].append(user_data)
-        publish(data, 'system/logged_players')
+        #     user_data['name'] = entity.reference
+        #     user_data['location'] = location
+        #     user_data['logged'] = entity.logged
+        #     data['data']['entities'].append(user_data)
+        # publish(data, 'system/logged_players')
 
         return LogIn(token)
 

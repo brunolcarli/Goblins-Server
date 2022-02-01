@@ -1,15 +1,40 @@
-from ast import literal_eval
+from ast import Delete, literal_eval
+from site import ENABLE_USER_SITE
 from django.contrib.auth import default_app_config
 import graphene
 from graphene.types.structures import Structure
 import redis
 from django.conf import settings
 from goblins.enums import ChatZone
-from goblins.models import Entity
+from goblins.models import Entity, Character
 from django.conf import settings
 from goblins.util import publish
-from goblins.enums import ChatZone
+from goblins.enums import ChatZone, AvailableClasses
 from users.utils import access_required
+from goblins.goblin_classes import GoblinClasses
+
+
+class CharacterType(graphene.ObjectType):
+    """
+    Character attributes.
+    """
+    name = graphene.String()
+    current_hp = graphene.Int()
+    current_mp = graphene.Int()
+    max_hp = graphene.Int()
+    max_mp = graphene.Int()
+    strength = graphene.Int()
+    defense = graphene.Int()
+    magic = graphene.Int()
+    spirit = graphene.Int()
+    experience = graphene.Int()
+    next_lv = graphene.Int()
+    lv = graphene.Int()
+    max_range = graphene.Int()
+    movement = graphene.Int()
+    luck = graphene.Int()
+    # skills = models.ManyToManyField('goblins.Skill')
+    goblin_class = graphene.String()
 
 
 class ChatMessageType(graphene.ObjectType):
@@ -99,6 +124,70 @@ class Query:
             chat = []
 
         return [ChatMessageType(**i) for i in chat[:25]]
+
+    characters = graphene.List(
+        CharacterType
+    )
+
+    @access_required
+    def resolve_characters(self, info, **kwargs):
+        if not kwargs.get('user'):
+            raise Exception('Invalid user.')
+
+        return Character.objects.filter(user=kwargs['user'])
+
+
+class CreateCharacter(graphene.relay.ClientIDMutation):
+    """
+    Creates an unique Character.
+    """
+    character = graphene.Field(CharacterType)
+
+    class Input:
+        name = graphene.String(required=True)
+        goblin_class = AvailableClasses(required=True)
+
+    @access_required
+    def mutate_and_get_payload(self, info, **kwargs):
+        class_bonus = GoblinClasses.get_class(kwargs['goblin_class'])
+        user = kwargs['user']
+        if not user:
+            raise Exception('Not a valid user.')
+
+        if user.character_set.count() > 2:
+            raise Exception('Max characters reached.')
+
+        character = Character.objects.create(
+            name=kwargs['name'],
+            goblin_class=kwargs['goblin_class'],
+            user=user,
+            **class_bonus
+
+        )
+        character.save()
+        return CreateCharacter(character)
+
+
+class DeleteCharacter(graphene.relay.ClientIDMutation):
+    character = graphene.Field(CharacterType)
+
+    class Input:
+        name = graphene.String(required=True)
+
+    @access_required
+    def mutate_and_get_payload(self, info, **kwargs):
+        user = kwargs.get('user')
+
+        if not user:
+            raise Exception('Invalid user')
+
+        try:
+            char = Character.objects.get(name=kwargs['name'], user__id=user.id)
+            char.delete()
+        except Character.DoesNotExist:
+            raise Exception('Not found')
+        else:
+            return DeleteCharacter(char)
 
 
 class LocationInput(graphene.InputObjectType):
@@ -196,6 +285,8 @@ class SendChatMessage(graphene.relay.ClientIDMutation):
 
 
 class Mutation:
+    create_character = CreateCharacter.Field()
+    delete_character = DeleteCharacter.Field()
     create_entity = CreateEntity.Field()
     update_position = UpdatePosition.Field()
     send_chat_message = SendChatMessage.Field()
