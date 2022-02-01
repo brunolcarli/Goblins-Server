@@ -1,7 +1,7 @@
-import graphene
+from graphene import Enum
 
 
-class ChatZone(graphene.Enum):
+class ChatZone(Enum):
     """
     Define chat zones for messaging grouping.
     """
@@ -9,3 +9,22 @@ class ChatZone(graphene.Enum):
     GROUP = 'group'
     GUILD = 'guild'
     DIRECT = 'direct'
+
+
+class AvailableClasses(Enum):
+    """
+    Define as classes possiveis de serem criadas.
+    """
+    WARRIOR = 'warrior'
+    RANGER = 'ranger'
+    MAGICIAN = 'magician'
+
+
+class AvailableMaps(Enum):
+    FOREST = 'forest'
+    PLAINS = 'plains'
+    MOUNTAIN = 'mountain'
+    SWAMP = 'swamp'
+    RIVERSIDE = 'riverside'
+    DESERT = 'desert'
+    VILLAGE = 'village'
