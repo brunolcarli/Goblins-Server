@@ -39,17 +39,18 @@ def access_required(function):
         except get_user_model().DoesNotExist:
             raise Exception('Invalid validation data!')
 
-        entity, _ = Entity.objects.get_or_create(reference=user.username)
+        # entity, _ = Entity.objects.get_or_create(reference=user.username)
 
         if (now.timestamp() > expiration_time):
-            entity.logged = False
-            entity.save()
+        #     entity.logged = False
+        #     entity.save()
             raise Exception('Session expired')
 
         if user.is_anonymous:
             raise Exception('Not logged in!')
 
-        entity.logged = True
-        entity.save()
+        # entity.logged = True
+        # entity.save()
+        kwargs['user'] = user
         return function(*args, **kwargs)
     return decorated
