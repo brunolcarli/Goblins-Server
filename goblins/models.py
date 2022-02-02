@@ -17,7 +17,6 @@ class Entity(models.Model):
 class Character(models.Model):
     """
     Estrutura de dados para representar os atributos de um personagem.
-    Um personagem é uma entidade jogável com características individuais.
     """
     name = models.CharField(max_length=50)
     current_hp = models.IntegerField(default=200)
@@ -37,6 +36,10 @@ class Character(models.Model):
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, null=True)
     skills = models.ManyToManyField('goblins.Skill')
     goblin_class = models.CharField(max_length=25, null=True)
+    location = models.BinaryField()
+    logged = models.BooleanField(default=False)
+    map_area = models.CharField(max_length=35, null=True)
+    server_instance = models.CharField(max_length=35, null=True)
 
     class Meta:
         unique_together = ('name', 'user')
@@ -53,3 +56,15 @@ class Skill(models.Model):
     area_of_effect = models.IntegerField(default=1)
     effect_type = models.CharField(max_length=20)
     description = models.CharField(max_length=100)
+
+
+class ServerInstance(models.Model):
+    """
+    Separated instance of game.
+    """
+    reference = models.CharField(max_length=35, null=True, unique=True)
+
+
+class MapArea(models.Model):
+    reference = models.CharField(max_length=35, null=True)
+    server_instance = models.ForeignKey(ServerInstance, on_delete=models.CASCADE)

@@ -1,40 +1,17 @@
-from ast import Delete, literal_eval
+from ast import literal_eval
 from site import ENABLE_USER_SITE
-from django.contrib.auth import default_app_config
 import graphene
-from graphene.types.structures import Structure
+from graphql import GraphQLObjectType
 import redis
 from django.conf import settings
-from goblins.enums import ChatZone
-from goblins.models import Entity, Character
+from goblins.enums import AvailableMaps, ChatZone
+from goblins.models import Entity, Character, ServerInstance, MapArea
 from django.conf import settings
 from goblins.util import publish
 from goblins.enums import ChatZone, AvailableClasses
 from users.utils import access_required
 from goblins.goblin_classes import GoblinClasses
-
-
-class CharacterType(graphene.ObjectType):
-    """
-    Character attributes.
-    """
-    name = graphene.String()
-    current_hp = graphene.Int()
-    current_mp = graphene.Int()
-    max_hp = graphene.Int()
-    max_mp = graphene.Int()
-    strength = graphene.Int()
-    defense = graphene.Int()
-    magic = graphene.Int()
-    spirit = graphene.Int()
-    experience = graphene.Int()
-    next_lv = graphene.Int()
-    lv = graphene.Int()
-    max_range = graphene.Int()
-    movement = graphene.Int()
-    luck = graphene.Int()
-    # skills = models.ManyToManyField('goblins.Skill')
-    goblin_class = graphene.String()
+from goblins.maps import MapSizes
 
 
 class ChatMessageType(graphene.ObjectType):
@@ -76,6 +53,107 @@ class EntityType(graphene.ObjectType):
         return {'x': 0, 'y': 0}
 
 
+class CharacterType(graphene.ObjectType):
+    """
+    Character attributes.
+    """
+    name = graphene.String()
+    current_hp = graphene.Int()
+    current_mp = graphene.Int()
+    max_hp = graphene.Int()
+    max_mp = graphene.Int()
+    strength = graphene.Int()
+    defense = graphene.Int()
+    magic = graphene.Int()
+    spirit = graphene.Int()
+    experience = graphene.Int()
+    next_lv = graphene.Int()
+    lv = graphene.Int()
+    max_range = graphene.Int()
+    movement = graphene.Int()
+    luck = graphene.Int()
+    # skills = models.ManyToManyField('goblins.Skill')
+    goblin_class = graphene.String()
+    logged = graphene.Boolean()
+    location = graphene.Field(PositionType)
+    map_area = graphene.Field('goblins.schema.MapAreaType')
+
+    def resolve_map_area(self, info, **kwargs):
+        try:
+            zone = MapArea.objects.get(
+                reference=self.map_area,
+                server_instance__reference=self.server_instance
+            )
+        except MapArea.DoesNotExist:
+            return None
+        else:
+            return zone
+
+    def resolve_logged(self, info, **kwargs):
+        if self.logged:
+            return True
+        return False
+
+    def resolve_location(self, info, **kwargs):
+        if self.location:
+            return literal_eval(self.location.decode('utf-8'))
+        return {'x': 0, 'y': 0}
+
+
+class MapAreaType(graphene.ObjectType):
+    """
+    Define available map scenarios to play
+    """
+    reference = graphene.String()
+    online_count = graphene.Int()
+    area_dimension = graphene.List(
+        graphene.Int,
+        description='Sizes XxY of the map.'
+    )
+
+    def resolve_area_dimension(self, info, **kwargs):
+        return MapSizes.get_map_size(self.reference)
+
+    def resolve_online_count(self, info, **kwargs):
+        return Character.objects.filter(
+            logged=True,
+            server_instance=self.server_instance.reference,
+            map_area=self.reference
+        ).count()
+
+
+class ServerInstanceType(graphene.ObjectType):
+    """
+    Define available server instances.
+    """
+    reference = graphene.String(description='Server reference.')
+    map_areas = graphene.List(MapAreaType)
+    online_count = graphene.Int()
+
+    def resolve_map_areas(self, info, **kwargs):
+        return MapArea.objects.filter(server_instance__id=self.id)
+
+    def resolve_online_count(self, info, **kwargs):
+        return Character.objects.filter(
+            logged=True,
+            server_instance=self.reference
+        ).count()
+
+
+class LogStatus(graphene.ObjectType):
+    """ User current status """
+    username = graphene.String()
+    online_characters = graphene.List(
+        CharacterType
+    )
+    active_server = graphene.String()
+    irregular = graphene.Boolean()
+    logged = graphene.Boolean()
+
+
+##########################
+# Query
+##########################
 class Query:
 
     version = graphene.String(
@@ -125,18 +203,42 @@ class Query:
 
         return [ChatMessageType(**i) for i in chat[:25]]
 
-    characters = graphene.List(
+    user_characters = graphene.List(
         CharacterType
     )
 
     @access_required
-    def resolve_characters(self, info, **kwargs):
+    def resolve_user_characters(self, info, **kwargs):
         if not kwargs.get('user'):
             raise Exception('Invalid user.')
 
         return Character.objects.filter(user=kwargs['user'])
 
+    characters = graphene.List(
+        CharacterType,
+        logged=graphene.Boolean(),
+        map_area=AvailableMaps()
+    )
 
+    @access_required
+    def resolve_characters(self, info, **kwargs):
+        return Character.objects.filter(**kwargs)
+
+    # servers
+    server_instances = graphene.List(
+        ServerInstanceType,
+        reference=graphene.String()
+    )
+
+    @access_required
+    def resolve_server_instances(self, info, **kwargs):
+        user = kwargs.pop('user')
+        return ServerInstance.objects.filter(**kwargs)
+
+
+##########################
+# Mutation
+##########################
 class CreateCharacter(graphene.relay.ClientIDMutation):
     """
     Creates an unique Character.
@@ -284,9 +386,59 @@ class SendChatMessage(graphene.relay.ClientIDMutation):
         return SendChatMessage(data)
 
 
+class LogOn(graphene.relay.ClientIDMutation):
+    log_status = graphene.Field(LogStatus)
+
+    class Input:
+        character_name = graphene.String(required=True)
+        map_area = AvailableMaps(required=True)
+        server_reference = graphene.String(required=True)
+
+    @access_required
+    def mutate_and_get_payload(self, info, **kwargs):
+        user = kwargs.get('user')
+        if not user:
+            raise Exception('Unauthorized!')
+
+        # Try recover the Map Area
+        try:
+            zone = MapArea.objects.get(
+                reference=kwargs['map_area'],
+                server_instance__reference=kwargs['server_reference']
+            )
+        except MapArea.DoesNotExist:
+            raise Exception('Invalid Server or Map area.')
+
+        # Try recover the Character
+        try:
+            char = Character.objects.get(
+                user=user,
+                name=kwargs['character_name']
+            )
+        except Character.DoesNotExist:
+            raise Exception('Invalid character!')
+
+        # Deu bom
+        char.logged = True
+        char.map_area = zone.reference
+        char.server_instance = zone.server_instance.reference
+        char.save()
+
+        # API response
+        response = {
+            'username': user.username,
+            'online_characters': user.character_set.filter(logged=True),
+            'active_server': char.server_instance,
+            'irregular': False,
+            'logged': True
+        }
+        return LogOn(response)
+
+
 class Mutation:
     create_character = CreateCharacter.Field()
     delete_character = DeleteCharacter.Field()
     create_entity = CreateEntity.Field()
     update_position = UpdatePosition.Field()
     send_chat_message = SendChatMessage.Field()
+    logon = LogOn.Field()
