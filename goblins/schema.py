@@ -77,6 +77,10 @@ class CharacterType(graphene.ObjectType):
     logged = graphene.Boolean()
     location = graphene.Field(PositionType)
     map_area = graphene.Field('goblins.schema.MapAreaType')
+    sprite = graphene.String(description="Sprite image url")
+
+    def resolve_sprite(self, info, **kwargs):
+        return GoblinClasses.get_class(self.goblin_class)['sprite']
 
     def resolve_map_area(self, info, **kwargs):
         try:
@@ -251,8 +255,11 @@ class CreateCharacter(graphene.relay.ClientIDMutation):
 
     @access_required
     def mutate_and_get_payload(self, info, **kwargs):
-        class_bonus = GoblinClasses.get_class(kwargs['goblin_class'])
         user = kwargs['user']
+        class_bonus = GoblinClasses.get_class(kwargs['goblin_class']).copy()
+        # remove sprite from bonuses
+        class_bonus.pop('sprite')
+
         if not user:
             raise Exception('Not a valid user.')
 
