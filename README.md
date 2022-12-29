@@ -22,7 +22,7 @@
 
 <hr />
 
-This project implements a backend server for a tactics online multiplayer game. It is an open source experimental project. This service aims to store players data, like their position, lv, characters, and all game stuff that must be persistent. The server also communicates with an MQTT message broker to broadcast ingame events to all connected clients, like chat messages, player actions and all events that must be updated on the client side within the game environment. The server is supposed to be online and serving a GraphQL API so that the clients can write and read data through the API.
+This project implements a backend server for a tactics online multiplayer game. It is an open source experimental project. This service aims to store players data, like their position, lv, characters, and all game stuff that must be persistent. The server uses websockets based on GraphQL subscriptions to broadcast ingame events to all connected clients, like chat messages, player actions and all events that must be updated on the client side within the game environment. The server is supposed to be online and serving a GraphQL API so that the clients can write and read data through the API.
 
 # Service configuration and execution
 
@@ -51,7 +51,7 @@ Required dependencies:
 - [Python3](https://www.python.org/) (suggested 3.9.9);
 - [Python virtualenv](https://docs.python.org/3/tutorial/venv.html) (suggestion: [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/));
 - [Redis-Server](https://redis.io/topics/quickstart);
-- [MQTT Broker](https://mosquitto.org/download/);
+
 
 ### Setting up
 
@@ -83,9 +83,6 @@ Open the file and edit the `foo` values, changing to valid values for your envir
 ```
 export SECRET_KEY=anythingHere
 export DJANGO_SETTINGS_MODULE=game_server.settings.development
-export MQTT_HOST=localhost
-export MQTT_PORT=1888
-export MQTT_USER=game_server
 export REDIS_HOST=localhost
 export REDIS_PORT=6379
 ```
@@ -119,7 +116,7 @@ Required dependencies:
 - Python3.x (suggested 3.9.9);
 - Docker;
 - docker-compose;
-- MQTT broker;
+
 
 
 ### Setting up
@@ -150,9 +147,6 @@ MYSQL_HOST=game_server_db
 DJANGO_SETTINGS_MODULE=game_server.settings.production
 REDIS_HOST=redis
 REDIS_PORT=6379
-MQTT_HOST=124.56.23.3
-MQTT_PORT=1888
-MQTT_USER=mqtt_user
 ```
 
 **IMPORTANT**: The values for the variables `MYSQL_HOST` and `REDIS_HOST` **must be the same name defined on docker-compose service_name**, at the moment this text is been written, the service name for the MySQL database is defined as `game_server_db` and the Redis service is defines simply as `redis` so, these are the values you **must use**.
