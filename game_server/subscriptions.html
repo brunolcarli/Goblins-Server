@@ -55,8 +55,6 @@
                 {reconnect: true},
             )
             subFetcher = subClient.request.bind(subClient)
-            console.log(location.protocol)
-            console.log(subClient);
             // Render <GraphiQL /> into the body.
             ReactDOM.render(
                 React.createElement(GraphiQL, {
