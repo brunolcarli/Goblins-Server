@@ -28,10 +28,6 @@ class GraphQLCustomCoreBackend(GraphQLCoreBackend):
         super().__init__(executor)
         self.execute_params['allow_subscriptions'] = True
 
-# urlpatterns = [
-#     path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True))),
-# ]
-
 def subscriptions(request):
     """Trivial view to serve the `graphiql.html` file."""
     del request
