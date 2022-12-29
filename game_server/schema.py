@@ -1,4 +1,4 @@
-import pathlib
+from django.conf import settings
 
 import asgiref
 import channels

@@ -10,7 +10,7 @@ application = channels.routing.ProtocolTypeRouter(
         "http": django.core.asgi.get_asgi_application(),
         "websocket": channels.auth.AuthMiddlewareStack(
             channels.routing.URLRouter(
-                [django.urls.path("graphql/", MyGraphqlWsConsumer.as_asgi())]
+                [django.urls.path("subscriptions/", MyGraphqlWsConsumer.as_asgi())]
             )
         ),
     }

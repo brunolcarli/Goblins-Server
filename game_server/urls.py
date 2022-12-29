@@ -20,20 +20,28 @@ from django.urls import path
 
 from django.views.decorators.csrf import csrf_exempt
 from graphene_django.views import GraphQLView
+from graphql import GraphQLCoreBackend
+
+
+class GraphQLCustomCoreBackend(GraphQLCoreBackend):
+    def __init__(self, executor=None):
+        super().__init__(executor)
+        self.execute_params['allow_subscriptions'] = True
 
 # urlpatterns = [
 #     path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True))),
 # ]
 
-def graphiql(request):
+def subscriptions(request):
     """Trivial view to serve the `graphiql.html` file."""
     del request
-    graphiql_filepath = pathlib.Path(__file__).absolute().parent / "graphiql.html"
+    graphiql_filepath = pathlib.Path(__file__).absolute().parent / "subscriptins.html"
     with open(graphiql_filepath) as f:
         return django.http.response.HttpResponse(f.read())
 
 
 urlpatterns = [
-    django.urls.path("", graphiql),
+    path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True, backend=GraphQLCustomCoreBackend()))),
+    django.urls.path("", subscriptions),
     django.urls.path("admin", django.contrib.admin.site.urls),
 ]
