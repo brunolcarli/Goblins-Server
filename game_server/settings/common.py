@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+import asyncio
+import pathlib
+import sys
+import uuid
 
 
 VERSION = '0.0.2'
@@ -23,7 +27,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'jpx$jii#*%yj#=78i7$8()i^s0qwil!*k66or0)ojq^y$r8r^r'
+SECRET_KEY = str(uuid.uuid4())
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -40,10 +44,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'graphene_django',
+    # 'graphene_django',
     'goblins',
     'users',
     'corsheaders',
+    'channels'
 ]
 
 MIDDLEWARE = [
@@ -137,7 +142,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
+STATICFILES_FINDERS = ["django.contrib.staticfiles.finders.AppDirectoriesFinder"]
 
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+ASGI_APPLICATION = "game_server.asgi.application"
 GRAPHENE = {
     'SCHEMA': 'game_server.schema.schema',
 }

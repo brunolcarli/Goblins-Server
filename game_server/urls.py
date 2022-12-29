@@ -13,12 +13,27 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import pathlib
+import django
 from django.contrib import admin
 from django.urls import path
 
 from django.views.decorators.csrf import csrf_exempt
 from graphene_django.views import GraphQLView
 
+# urlpatterns = [
+#     path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True))),
+# ]
+
+def graphiql(request):
+    """Trivial view to serve the `graphiql.html` file."""
+    del request
+    graphiql_filepath = pathlib.Path(__file__).absolute().parent / "graphiql.html"
+    with open(graphiql_filepath) as f:
+        return django.http.response.HttpResponse(f.read())
+
+
 urlpatterns = [
-    path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True))),
+    django.urls.path("", graphiql),
+    django.urls.path("admin", django.contrib.admin.site.urls),
 ]
