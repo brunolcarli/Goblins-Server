@@ -9,7 +9,7 @@ migrate:
 
 
 install:
-	pip install -r game_server/requirements/${ENV_REF}.txt
+	pip install -r requirements.txt
 
 
 shell:
