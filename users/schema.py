@@ -13,7 +13,6 @@ from ast import literal_eval
 import graphene
 from graphene_django import DjangoObjectType
 from django.contrib.auth import get_user_model
-from goblins.util import publish
 from users.utils import access_required
 from users.models import TokenBlackList
 from goblins.models import Entity
@@ -88,7 +87,7 @@ class LogOut(graphene.relay.ClientIDMutation):
     """
     Desloga do sistema.
     """
-    response = graphene.String()
+    response = graphene.Boolean()
 
     class Input:
         username = graphene.String(required=True)
@@ -103,30 +102,12 @@ class LogOut(graphene.relay.ClientIDMutation):
         if username != token_metadata['username']:
             raise Exception('Invalid credentials')
 
-        ents = Entity.objects.filter(reference=username)
+        ents = Entity.objects.filter(reference=username, logged=True)
         for ent in ents:
             ent.logged = False
             ent.save()
 
-        # publish logged out player
-        publish({'username': username}, 'system/logout')
-
-        # Publish logged players to the interfaces
-        data = {'data': {'entities': []}}
-        for entity in Entity.objects.filter(logged=True):
-            user_data = {}
-            try:
-                location = literal_eval(entity.location.decode('utf-8'))
-            except:
-                continue
-            
-            user_data['name'] = entity.reference
-            user_data['location'] = location
-            user_data['logged'] = entity.logged
-            data['data']['entities'].append(user_data)
-        publish(data, 'system/logged_players')
-
-        return LogOut("Bye Bye")
+        return LogOut(True)
 
 
 class LogIn(graphene.relay.ClientIDMutation):
@@ -165,7 +146,10 @@ class LogIn(graphene.relay.ClientIDMutation):
 
         return LogIn(token)
 
+
 class Mutation(object):
     sign_up = CreateUser.Field()
     log_out = LogOut.Field()
     log_in = LogIn.Field()
+
+

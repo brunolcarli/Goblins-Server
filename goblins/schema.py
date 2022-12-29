@@ -11,7 +11,6 @@ from django.conf import settings
 from goblins.enums import AvailableMaps, ChatZone
 from goblins.models import Entity, Character, ServerInstance, MapArea
 from django.conf import settings
-from goblins.util import publish
 from goblins.enums import ChatZone, AvailableClasses
 from users.utils import access_required
 from goblins.goblin_classes import GoblinClasses
@@ -298,7 +297,6 @@ class SendChatMessage(graphene.Mutation, name="SendChatMessagePayload"):  # type
         return SendChatMessage(ok=True)
 
 
-
 class CreateCharacter(graphene.relay.ClientIDMutation):
     """
     Creates an unique Character.
@@ -411,7 +409,7 @@ class UpdatePosition(graphene.relay.ClientIDMutation):
             'y': y
         }
 
-        publish(data, 'foo/baz')
+        OnCharacterMovement.character_movement(reference=reference, x=x, y=y)
 
         return UpdatePosition(entity)
 
@@ -449,7 +447,9 @@ class UpdatePosition(graphene.relay.ClientIDMutation):
 #         return SendChatMessage(data)
 
 
-class LogOn(graphene.relay.ClientIDMutation):
+class CharacterLogIn(graphene.relay.ClientIDMutation):
+    """Enters the game with a selected character"""
+    
     log_status = graphene.Field(LogStatus)
 
     class Input:
@@ -481,11 +481,19 @@ class LogOn(graphene.relay.ClientIDMutation):
         except Character.DoesNotExist:
             raise Exception('Invalid character!')
 
-        # Deu bom
+        # Good to go
         char.logged = True
         char.map_area = zone.reference
         char.server_instance = zone.server_instance.reference
         char.save()
+
+        # Broadcast character login
+        position = literal_eval(char.location.decode('utf-8'))
+        OnCharacterLogIn.character_login(
+            reference=char.name,
+            x=position['x'],
+            y=position['y']
+        )
 
         # API response
         response = {
@@ -495,7 +503,48 @@ class LogOn(graphene.relay.ClientIDMutation):
             'irregular': False,
             'logged': True
         }
-        return LogOn(response)
+        return CharacterLogIn(response)
+
+
+class CharacterLogOut(graphene.relay.ClientIDMutation):
+    """Leaves the game with current character"""
+    
+    log_status = graphene.Field(LogStatus)
+
+    class Input:
+        character_name = graphene.String(required=True)
+
+    @access_required
+    def mutate_and_get_payload(self, info, **kwargs):
+        user = kwargs.get('user')
+        if not user:
+            raise Exception('Unauthorized!')
+
+        # Try recover the Character
+        try:
+            char = Character.objects.get(
+                user=user,
+                name=kwargs['character_name']
+            )
+        except Character.DoesNotExist:
+            raise Exception('Invalid character!')
+
+        # Good to go
+        char.logged = False
+        char.save()
+
+        # Broadcast character logout
+        OnCharacterLogOut.character_logout(reference=char.name)
+
+        # API response
+        response = {
+            'username': user.username,
+            'online_characters': user.character_set.filter(logged=True),
+            'active_server': char.server_instance,
+            'irregular': False,
+            'logged': True
+        }
+        return CharacterLogIn(response)
 
 
 class Mutation:
@@ -504,11 +553,14 @@ class Mutation:
     create_entity = CreateEntity.Field()
     update_position = UpdatePosition.Field()
     send_chat_message = SendChatMessage.Field()
-    logon = LogOn.Field()
+    character_login = CharacterLogIn.Field()
+    character_logout = CharacterLogOut.Field()
 
 
 
-##
+#################
+# SUBSCRIPTIONS
+#################
 
 
 class OnNewChatMessage(channels_graphql_ws.Subscription):
@@ -568,7 +620,81 @@ class OnNewChatMessage(channels_graphql_ws.Subscription):
         )
 
 
+class OnCharacterMovement(channels_graphql_ws.Subscription):
+    reference = graphene.String()
+    x = graphene.Int()
+    y = graphene.Int()
+
+
+    def subscribe(self, info, **kwargs):
+        del info
+        return ['movement']
+
+    def publish(self, info, **kwargs):
+        reference = self["reference"]
+        new_x = self["x"]
+        new_y = self["y"]
+
+        return OnCharacterMovement(
+            reference=reference, x=new_x, y=new_y
+        )
+
+    @classmethod
+    def character_movement(cls, reference, x, y):
+        cls.broadcast(
+            group='movement',
+            payload={"reference": reference, "x": x, "y": y},
+        )
+
+
+class OnCharacterLogOut(channels_graphql_ws.Subscription):
+    reference = graphene.String()
+
+    def subscribe(self, info, **kwargs):
+        del info
+        return ['logout']
+
+    def publish(self, info, **kwargs):
+        reference = self["reference"]
+
+        return OnCharacterLogOut(reference=reference)
+
+    @classmethod
+    def character_logout(cls, reference):
+        cls.broadcast(
+            group='logout',
+            payload={"reference": reference}
+        )
+
+
+class OnCharacterLogIn(channels_graphql_ws.Subscription):
+    reference = graphene.String()
+    x = graphene.Int()
+    y = graphene.Int()
+
+    def subscribe(self, info, **kwargs):
+        del info
+        return ['login']
+
+    def publish(self, info, **kwargs):
+        reference = self["reference"]
+        x = self["x"]
+        y = self["y"]
+
+        return OnCharacterLogIn(reference=reference, x=x, y=y)
+
+    @classmethod
+    def character_login(cls, reference, x, y):
+        cls.broadcast(
+            group='login',
+            payload={"reference": reference, "x": x, "y": y}
+        )
+
+
 class Subscription(graphene.ObjectType):
     """GraphQL subscriptions."""
 
     on_new_chat_message = OnNewChatMessage.Field()
+    on_character_movement = OnCharacterMovement.Field()
+    on_character_login = OnCharacterLogIn.Field()
+    on_character_logout = OnCharacterLogOut.Field()
