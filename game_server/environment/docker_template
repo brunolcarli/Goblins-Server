@@ -7,6 +7,3 @@ MYSQL_HOST=foo
 DJANGO_SETTINGS_MODULE=game_server.settings.foo
 REDIS_HOST=foo
 REDIS_PORT=foo
-MQTT_HOST=foo
-MQTT_PORT=foo
-MQTT_USER=foo

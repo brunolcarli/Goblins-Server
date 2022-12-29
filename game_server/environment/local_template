@@ -1,7 +1,5 @@
 export SECRET_KEY=foo
 export DJANGO_SETTINGS_MODULE=game_server.settings.development
-export MQTT_HOST=foo
-export MQTT_PORT=foo
-export MQTT_USER=foo
+
 export REDIS_HOST=foo
 export REDIS_PORT=foo
