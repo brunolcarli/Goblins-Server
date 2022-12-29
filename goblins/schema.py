@@ -544,7 +544,7 @@ class CharacterLogOut(graphene.relay.ClientIDMutation):
             'irregular': False,
             'logged': True
         }
-        return CharacterLogIn(response)
+        return CharacterLogOut(response)
 
 
 class Mutation:
