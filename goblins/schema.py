@@ -169,6 +169,7 @@ class LogStatus(graphene.ObjectType):
     active_server = graphene.String()
     irregular = graphene.Boolean()
     logged = graphene.Boolean()
+    char_name = graphene.String()
 
 
 ##########################
@@ -250,6 +251,7 @@ class Query:
 
     @access_required
     def resolve_characters(self, info, **kwargs):
+        kwargs.pop('user', None)
         return Character.objects.filter(**kwargs)
 
     # servers
@@ -383,7 +385,7 @@ class CreateEntity(graphene.relay.ClientIDMutation):
 
 
 class UpdatePosition(graphene.relay.ClientIDMutation):
-    entity = graphene.Field(EntityType)
+    entity = graphene.Field(CharacterType)
 
     class Input:
         reference = graphene.String(required=True)
@@ -392,26 +394,22 @@ class UpdatePosition(graphene.relay.ClientIDMutation):
     @access_required
     def mutate_and_get_payload(self, info, **kwargs):
         location = kwargs.get('location')
-        x = location.get('x', 0)
-        y = location.get('y', 0)
+        x = location.get('x', 48)
+        y = location.get('y', 48)
         location = str(location).encode('utf-8')
         reference = kwargs.get('reference')
 
-        entity = Entity.objects.get(
-            reference=reference,
+        char = Character.objects.get(
+            user=kwargs.get('user'),
+            name=reference
         )
-        entity.location = location
-        entity.save()
+        char.location = location
+        char.save()
 
-        data = {
-            'reference': reference,
-            'x': x,
-            'y': y
-        }
 
         OnCharacterMovement.character_movement(reference=reference, x=x, y=y)
 
-        return UpdatePosition(entity)
+        return UpdatePosition(char)
 
 
 # class SendChatMessage(graphene.relay.ClientIDMutation):
@@ -485,6 +483,8 @@ class CharacterLogIn(graphene.relay.ClientIDMutation):
         char.logged = True
         char.map_area = zone.reference
         char.server_instance = zone.server_instance.reference
+        if not char.location:
+            char.location = str({'x': 48, 'y': 48}).encode('utf-8')
         char.save()
 
         # Broadcast character login
@@ -501,7 +501,8 @@ class CharacterLogIn(graphene.relay.ClientIDMutation):
             'online_characters': user.character_set.filter(logged=True),
             'active_server': char.server_instance,
             'irregular': False,
-            'logged': True
+            'logged': True,
+            'char_name': char.name
         }
         return CharacterLogIn(response)
 
