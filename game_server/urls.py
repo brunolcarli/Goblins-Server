@@ -31,7 +31,7 @@ class GraphQLCustomCoreBackend(GraphQLCoreBackend):
 def subscriptions(request):
     """Trivial view to serve the `graphiql.html` file."""
     del request
-    graphiql_filepath = pathlib.Path(__file__).absolute().parent / "subscriptins.html"
+    graphiql_filepath = pathlib.Path(__file__).absolute().parent / "subscriptions.html"
     with open(graphiql_filepath) as f:
         return django.http.response.HttpResponse(f.read())
 
