@@ -280,21 +280,17 @@ class SendChatMessage(graphene.Mutation, name="SendChatMessagePayload"):  # type
         chatroom = graphene.String()
         text = graphene.String()
 
-    def mutate(self, info, chatroom, text):
+    @access_required
+    def mutate(self, info, chatroom, text, **kwargs):
         """Mutation "resolver" - store and broadcast a message."""
 
-        # Use the username from the connection scope if authorized.
-        username = (
-            info.context.user.username
-            if info.context.user.is_authenticated
-            else "Anonymous"
-        )
+        sender = kwargs['user'].username
 
         # Store a message.
-        chats[chatroom].append({"chatroom": chatroom, "text": text, "sender": username})
+        chats[chatroom].append({"chatroom": chatroom, "text": text, "sender": sender})
 
         # Notify subscribers.
-        OnNewChatMessage.new_chat_message(chatroom=chatroom, text=text, sender=username)
+        OnNewChatMessage.new_chat_message(chatroom=chatroom, text=text, sender=sender)
 
         return SendChatMessage(ok=True)
 
